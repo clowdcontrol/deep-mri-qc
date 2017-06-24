@@ -10,6 +10,8 @@ from keras.optimizers import SGD
 
 from keras import backend as K
 
+import json
+
 def qc_model():
     nb_classes = 2
 
@@ -75,12 +77,11 @@ if __name__ == "__main__":
 
     parser = ap.ArgumentParser(description="Tests an MRI image for motion and other artifacts and returns a probability of success.")
 
-    parser.add_argument("t1image")
+    parser.add_argument("freesurfout")
     args, leftovers = parser.parse_known_args()
 
-    image_file = args.t1image
-    print('Input image file:', image_file)
-
+    image_file = args.freesurfout + '/mri/orig.mgz'
+    # print('Input image file:', image_file)
 
     K.set_image_dim_ordering('th')
 
@@ -88,7 +89,7 @@ if __name__ == "__main__":
         img = nib.load(image_file).get_data()
 
         (x_size, y_size, z_size) = img.shape
-        print('original image size:', img.shape)
+        # print('original image size:', img.shape)
 
         y_max, z_max = 256, 224
 
@@ -102,14 +103,13 @@ if __name__ == "__main__":
         y_start, y_stop = int(y_mid-y_max/2), int(y_mid+y_max/2)
         z_start, z_stop = int(z_mid-z_max/2), int(z_mid+z_max/2)
 
-        print('x_slice:', x_slice)
-        print('y_start, y_stop:', y_start, y_stop)
-        print('z_start, z_stop:', z_start, z_stop)
-
+        # print('x_slice:', x_slice)
+        # print('y_start, y_stop:', y_start, y_stop)
+        # print('z_start, z_stop:', z_start, z_stop)
 
         img_slice = img[x_slice, y_start:y_stop, z_start:z_stop][np.newaxis, np.newaxis, ...]
 
-        print(img_slice.shape)
+        # print(img_slice.shape)
 
         model = Sequential()
         model = qc_model()
@@ -117,6 +117,10 @@ if __name__ == "__main__":
         prediction = model.predict(img_slice)
 
         print(prediction[0][0])
+        result = prediction[0][0]
+
+        with open('/data/autoqc.txt', 'w') as result_file:
+            result_file.writelines(str(result))
 
         K.clear_session()
 
